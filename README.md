@@ -846,13 +846,226 @@ int main()
 }
 ```
 
+LIS
+
 ```cpp
-
+int lis(vector<int> const &a)
+{
+    int n = a.size();
+    const int INF = 1e9;
+    vector<int> d(n + 1, INF);
+    d[0] = -INF;
+ 
+    for (int i = 0; i < n; i++)
+    {
+        int l = upper_bound(d.begin(), d.end(), a[i]) - d.begin();
+        if (d[l - 1] < a[i] && a[i] < d[l])
+            d[l] = a[i];
+    }
+ 
+    int ans = 0;
+    for (int l = 0; l <= n; l++)
+    {
+        if (d[l] < INF)
+            ans = l;
+    }
+    return ans;
+}
 ```
+standard segment tree
+ 
 ```cpp
-
+struct segtree
+{
+    int size=1;
+    vector<pii>mins,maxs;
+    void init(int n)
+    {
+        while(size<n)size*=2;
+        mins.assign(2*size,{MOD,MOD});
+        maxs.assign(2*size,{0ll,0ll});
+    }
+    void build(vector<int>&a)
+    {
+        build(a,0,0,size);
+    }
+    void build(vector<int>&a,int x,int lx,int ry)
+    {
+        if(ry-lx==1)
+        {
+            if(lx<a.size())
+                mins[x]={a[lx],lx},maxs[x]={a[lx],lx};
+            return ;
+        }
+        int mid=(lx+ry)/2;
+        build(a,2*x+1,lx,mid);
+        build(a,2*x+2,mid,ry);
+        mins[x]=min(mins[2*x+1],mins[2*x+2]);
+        maxs[x]=max(maxs[2*x+1],maxs[2*x+2]);
+    }
+    void set(int i,int v)
+    {
+        set(i,v,0,0,size);
+    }
+    void set(int i,int v,int x,int lx,int ry)
+    {
+        if(ry-lx==1)
+        {
+            mins[x].fs=v,maxs[x].fs=v;
+            return;
+        }
+        int mid=(lx+ry)/2;
+        if(i<mid)
+            set(i,v,2*x+1,lx,mid);
+        else
+            set(i,v,2*x+2,mid,ry);
+        mins[x]=min(mins[2*x+1],mins[2*x+2]);
+        maxs[x]=max(maxs[2*x+1],maxs[2*x+2]);
+    }
+    int minimum(int l,int r)
+    {
+        return minimum(l,r,0,0,size);
+    }
+    int minimum(int l,int r,int x,int lx,int ry)
+    {
+        if(lx>=r||ry<=l)return MOD;
+        if(lx>=l&&ry<=r)return mins[x].fs;
+        int mid=(lx+ry)/2;
+        return min(minimum(l,r,2*x+1,lx,mid),minimum(l,r,2*x+2,mid,ry));
+    }
+    int maximum(int l,int r)
+    {
+        return maximum(l,r,0,0,size);
+    }
+    int maximum(int l,int r,int x,int lx,int ry)
+    {
+        if(lx>=r||ry<=l)return -MOD;
+        if(lx>=l&&ry<=r)return maxs[x].fs;
+        int mid=(lx+ry)/2;
+        return max(maximum(l,r,2*x+1,lx,mid),maximum(l,r,2*x+2,mid,ry));
+    }
+    int max_v(int v)
+    {
+        return max_v(v,0,0,size);
+    }
+    int max_v(int v,int x,int lx,int ry)
+    {
+        if(maxs[x].fs<=v)return MOD;
+        if(ry-lx==1)return maxs[x].sc;
+        int mid=(lx+ry)/2;
+        if(maxs[2*x+1].fs>v)return max_v(v,2*x+1,lx,mid);
+        return max_v(v,2*x+2,mid,ry);
+    }
+    int min_v(int v)
+    {
+        return min_v(v,0,0,size);
+    }
+    int min_v(int v,int x,int lx,int ry)
+    {
+        if(mins[x].fs>=v)return -1;
+        if(ry-lx==1)return mins[x].sc;
+        int mid=(lx+ry)/2;
+        if(mins[2*x+2].fs<v)return min_v(v,2*x+2,mid,ry);
+        return min_v(v,2*x+1,lx,mid);
+    }
+};
 ```
+Topological sort
+
 ```cpp
-
+int n; // number of vertices
+vector<vector<int>> adj; // adjacency list of graph
+vector<bool> visited;
+vector<int> ans;
+void dfs(int v) {
+ visited[v] = true;
+ for (int u : adj[v]) {
+ if (!visited[u])
+ dfs(u);
+ }
+ ans.push_back(v);
+}
+void topological_sort() {
+ visited.assign(n, false);
+ ans.clear();
+ for (int i = 0; i < n; ++i) {
+ if (!visited[i]) {dfs(i);
+ }
+ }
+ reverse(ans.begin(), ans.end());
+}
 ```
 
+MST
+
+```cpp
+int parent[N],siz[N],sum[N];
+void make_set(int v) {
+ parent[v] = v;
+ siz[v] = 1;
+}void init() {
+ for (int i = 1; i < N; i++) {
+ make_set(i);
+ }
+ return;
+}
+int fSet(int v) {
+ if (v == parent[v])
+ return v;
+ return parent[v] = fSet(parent[v]);
+}
+void uSets(int a, int b) {
+ a = fSet(a);
+ b = fSet(b);if (a != b) {
+ if (siz[a] < siz[b])
+ swap(a, b);
+ parent[b] = a;
+ siz[a] += siz[b];
+ }
+}
+struct Edge {
+ int u, v, weight;
+ bool operator<(Edge const& other) {
+ return weight < other.weight;
+ }
+};
+vector<Edge> edges;
+//inside main
+init();
+int cost = 0;
+vector<Edge> result;
+sort(edges.begin(), edges.end());
+for (Edge e : edges) {
+ if (fSet(e.u) != fSet(e.v)) {
+ cost += e.weight;
+ result.push_back(e);
+ uSets(e.u, e.v);
+ }
+}
+```
+
+0-1 BFS
+```cpp
+1 BFS
+when there are at most two types of edges.
+Dijkstra is in $O(|E| \log |V|)$ but this in $O(|E|)$.
+vector<int> d(n, INF);
+d[s] = 0;
+deque<int> q;
+q.push_front(s);
+while (!q.empty()) {
+ int v = q.front();
+ q.pop_front();
+ for (auto edge : adj[v]) {
+ int u = edge.first;
+ int w = edge.second;
+ if (d[v] + w < d[u]) {
+ d[u] = d[v] + w;
+ if (w == 1)
+ q.push_back(u);
+ else
+ q.push_front(u);
+ }
+ }
+}
+```
