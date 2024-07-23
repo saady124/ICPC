@@ -1304,7 +1304,181 @@ int main()
     return 0;
 }
 ```
+Trie :
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+#define IO ios_base::sync_with_stdio(false), cin.tie(nullptr), cout.tie(nullptr);
+#define all(x) x.begin(), (x).end()
+#define el '\n'
+#define sz(v) (int)(v).size()
+#define yes cout << "Y" << el
+#define no cout << "N" << el
+#define N (int)1e6 + 4
 
+struct TrieNode
+{
+
+    TrieNode *childNode[26];
+    set<int> wordEnd, app;
+
+    TrieNode()
+    {
+        for (int i = 0; i < 26; i++)
+        {
+            childNode[i] = NULL;
+        }
+    }
+};
+
+void insert_key(TrieNode *root, string &key, int idx)
+{
+    TrieNode *currentNode = root;
+    for (auto c : key)
+    {
+        if (currentNode->childNode[c - 'a'] == NULL)
+        {
+            TrieNode *newNode = new TrieNode();
+            currentNode->childNode[c - 'a'] = newNode;
+        }
+        currentNode = currentNode->childNode[c - 'a'];
+        currentNode->app.emplace(idx);
+    }
+
+    currentNode->wordEnd.emplace(idx);
+}
+void delete_key(TrieNode *root, string &key, int idx)
+{
+    TrieNode *currentNode = root;
+    // TrieNode *prev = root;
+    for (auto c : key)
+    {
+        /*if (currentNode->childNode[c - 'a']->app.size() ==)
+        {
+            prev = currentNode;
+            currentNode = currentNode->childNode[c - 'a'];
+            prev->childNode[c - 'a']
+        }
+        else*/
+        currentNode = currentNode->childNode[c - 'a'];
+        currentNode->app.erase(idx);
+    }
+
+    currentNode->wordEnd.erase(idx);
+}
+
+bool search_key(TrieNode *root, string &key, int l, int r)
+{
+    // Initialize the currentNode pointer
+    // with the root node
+    TrieNode *currentNode = root;
+
+    // Iterate across the length of the string
+    for (auto c : key)
+    {
+
+        // Check if the node exist for the current
+        // character in the Trie.
+        if (currentNode->childNode[c - 'a'] == NULL)
+        {
+
+            // Given word does not exist in Trie
+            return false;
+        }
+
+        // Move the currentNode pointer to the already
+        // existing node for current character.
+        currentNode = currentNode->childNode[c - 'a'];
+    }
+    auto itr = currentNode->app.lower_bound(l);
+    if (itr == currentNode->app.end() || *itr > r)
+        return false;
+    return true;
+    // return (currentNode->app.size() >= 1);
+}
+bool search_for_prefix(TrieNode *root, string &key, int l, int r)
+{
+    // Initialize the currentNode pointer
+    // with the root node
+    TrieNode *currentNode = root;
+    // cout << key << " " << l << " " << r << el;
+    //  Iterate across the length of the string
+    for (auto c : key)
+    {
+        // cout << c << " " << l << " " << r << el;
+
+        // Check if the node exist for the current
+        // character in the Trie.
+        if (currentNode->childNode[c - 'a'] == NULL)
+        {
+
+            // Given word does not exist in Trie
+            return false;
+        }
+        currentNode = currentNode->childNode[c - 'a'];
+
+        // Move the currentNode pointer to the already
+        // existing node for current character.
+        auto itr = currentNode->wordEnd.lower_bound(l);
+        if (itr == currentNode->wordEnd.end() || *itr > r)
+            continue;
+        return true;
+    }
+    auto itr = currentNode->wordEnd.lower_bound(l);
+    if (itr == currentNode->wordEnd.end() || *itr > r)
+        return false;
+    return true;
+}
+void solve()
+{
+    int n;
+    cin >> n;
+    string s, str[n + 1];
+    TrieNode *root = new TrieNode();
+    for (int i = 1; i <= n; i++)
+    {
+        cin >> str[i];
+        insert_key(root, str[i], i);
+    }
+    int q, a, b, c;
+    cin >> q;
+    while (q--)
+    {
+        cin >> a;
+        if (a == 1)
+        {
+            cin >> a >> s;
+            delete_key(root, str[a], a);
+            insert_key(root, s, a);
+            str[a] = s;
+        }
+        else if (a == 2)
+        {
+            cin >> a >> b >> s;
+            if (search_for_prefix(root, s, a, b))
+                yes;
+            else
+                no;
+        }
+        else
+        {
+            cin >> a >> b >> s;
+            if (search_key(root, s, a, b))
+                yes;
+            else
+                no;
+        }
+    }
+}
+int main()
+{
+    // IO
+    solve();
+
+    return 0;
+}
+```
 ```cpp
 #include <bits/stdc++.h>
 
@@ -1344,3 +1518,276 @@ int main()
     return 0;
 }
 ```
+Lazy :
+```cpp
+struct segtree
+{
+  int size=1;
+  vector<int>sums,operations;
+  void init(int n)
+  {
+     while(size<n)size*=2;
+     sums.assign(2*size,0ll);
+     operations.assign(2*size,OO);
+  }
+  void propygate(int l,int r,int x)
+  {
+     if(r-l==1||operations[x]==OO)
+     {
+        operations[x]=OO;
+        return ;
+     }
+     int mid=(l+r)/2;
+     operations[2*x+1]=operations[x];
+     operations[2*x+2]=operations[x];
+     sums[2*x+1]=operations[x]*(mid-l);
+     sums[2*x+2]=operations[x]*(r-mid);
+     operations[x]=OO;
+  }
+  void build(vector<int>&a)
+  {
+    build(a,0,0,size);
+  }
+  void build(vector<int>&a,int x,int lx,int ry)
+  {
+      if(ry-lx==1)
+      {
+        if(lx<a.size())
+        sums[x]=a[lx];
+        return ;
+      }
+      int mid=(lx+ry)/2;
+      build(a,2*x+1,lx,mid);
+      build(a,2*x+2,mid,ry);
+      sums[x]=(sums[2*x+1]+sums[2*x+2]);
+  }
+  void modify(int l,int r,int v)
+  {
+    modify(l,r,v,0,0,size);
+  }
+  void modify(int l,int r,int v,int x,int lx,int ry)
+  {
+     propygate(lx,ry,x);
+     if(ry<=l||lx>=r)return ;
+     if(ry<=r&&lx>=l)
+     {
+         sums[x]=v*(ry-lx);
+         operations[x]=v;
+         return ;
+     }
+     int mid=(lx+ry)/2;
+     modify(l,r,v,2*x+1,lx,mid);
+     modify(l,r,v,2*x+2,mid,ry);
+     sums[x]=(sums[2*x+1]+sums[2*x+2]);
+  }
+  int sum(int l,int r)
+  {
+    return sum(l,r,0,0,size);
+  }
+  int sum(int l,int r,int x,int lx,int ry)
+  {
+     propygate(lx,ry,x);
+     if(lx>=r||ry<=l)return 0;
+     if(lx>=l&&ry<=r)return sums[x];
+     int mid=(lx+ry)/2;
+     return (sum(l,r,2*x+1,lx,mid)+sum(l,r,2*x+2,mid,ry));
+  }
+};
+```
+XOR Segment:
+``cpp
+#include<bits/stdc++.h>
+#include<ext/pb_ds/assoc_container.hpp>
+#include<ext/pb_ds/tree_policy.hpp>
+using namespace std;
+using namespace __gnu_pbds;
+#define elsady ios_base::sync_with_stdio(false);cin.tie(nullptr);cout.tie(nullptr);
+#define test int t;cin>>t;while(t--)
+#define fs first
+#define sc second
+#define ll long long
+#define endl '\n'
+#define be begin()
+#define en end()
+#define no cout<<"NO"<<endl
+#define yes cout<<"YES"<<endl
+#define int ll
+#define gr greater<int>
+#define pii pair<int,int>
+template <typename T> // T -> (can be integer, float or pair of int etc.)
+using ordered_set = tree<T, null_type, less<T>, rb_tree_tag, tree_order_statistics_node_update>;
+const ll MOD1=998244353,OO=1e18,MOD=1e9+7;
+const double PI=acos(-1);
+const int N=5*(1e5+5),T=1e6+1;
+vector<vector<int>>adj;
+bool vis[N];
+int dep[N];
+int dx[]= {1,-1,0,0,1,1,-1,-1};
+int dy[]= {0,0,1,-1,1,-1,1,-1};
+int dz[]= {0,0,0,0,1,-1};
+int n,m;
+int dis[N];
+// bitmasks
+//Number of leading zeroes: __builtin_clz(x)
+//Number of trailing zeroes : __builtin_ctz(x)
+//Number of 1-bits: __builtin_popcount(x);
+//last one : __lg()
+ll GCD(ll x,ll y) {
+    return y?GCD(y,x%y):x;
+}
+ll LCM(ll x,ll y) {
+    return x/GCD(x,y)*y;
+}
+ll prom(ll x,ll y,ll mod) {
+    return ((x%mod)*(y%mod))%mod;
+}
+ll inv(ll a,ll b) {
+    return 1<a?b-inv(b%a,a)*b/a:1;
+}
+int fastpow(int x,int y,int mod)
+{
+   if(y==0) return 1;
+   int c=fastpow(prom(x,x,mod),y/2,mod);
+   if(y%2)c=prom(c,x,mod);
+   return c;
+}
+bool prime(ll x)
+{
+    if(x<2)
+        return 0;
+    for(ll I=2; I*I<=x; I++)
+        if(x%I==0)
+            return 0;
+    return 1;
+}
+bool allow(int I,int j) {
+    return (I>=0&&j>=0&&I<n&&j<m);
+}
+struct segtree
+{
+  int size=1;
+  vector<int>sums[21];
+  vector<int>operations;
+  void init(int n)
+  {
+     while(size<n)size*=2;
+     for(int i=0;i<=20;i++)sums[i].assign(2*size,0ll);
+     operations.assign(2*size,0ll);
+  }
+  void propygate(int l,int r,int x)
+  {
+    if(r-l==1)
+    {
+        operations[x]=0;
+        return ;
+    }
+    operations[2*x+1]^=operations[x];
+    operations[2*x+2]^=operations[x];
+    int mid=(l+r)/2;
+    for(int i=0;i<=20;i++)
+    {
+        if(operations[x]&(1<<i))
+        {
+           sums[i][2*x+1]=mid-l-sums[i][2*x+1];
+           sums[i][2*x+2]=r-mid-sums[i][2*x+2];
+        } 
+    }
+    operations[x]=0;
+  }
+  void build(vector<int>&a)
+  {
+      build(a,0,0,size);
+  }
+  void build(vector<int>&a,int x,int lx,int ry)
+  {
+       if(ry-lx==1)
+       {
+          if(lx<a.size())
+          for(int i=0;i<=20;i++)
+           sums[i][x]=((a[lx]&(1<<i))!=0);
+          return ;
+       }
+       int mid=(lx+ry)/2;
+       build(a,2*x+1,lx,mid);
+       build(a,2*x+2,mid,ry);
+       for(int i=0;i<=20;i++)
+        sums[i][x]=sums[i][2*x+1]+sums[i][2*x+2];
+  }
+  void modify(int l,int r,int v)
+  {
+    modify(l,r,v,0,0,size);
+  }
+  void modify(int l,int r,int v,int x,int lx,int ry)
+  {
+     propygate(lx,ry,x);
+     if(ry<=l||lx>=r)return ;
+     if(ry<=r&&lx>=l)
+     {
+         for(int i=0;i<=20;i++)
+           if(v&(1<<i))
+         sums[i][x]=ry-lx-sums[i][x];
+         operations[x]=v;
+         return ;
+     }
+     int mid=(lx+ry)/2;
+     modify(l,r,v,2*x+1,lx,mid);
+     modify(l,r,v,2*x+2,mid,ry);
+     for(int i=0;i<=20;i++)
+      sums[i][x]=sums[i][2*x+1]+sums[i][2*x+2];
+  }
+  int sum(int l,int r)
+  {
+    return sum(l,r,0,0,size);
+  }
+  int sum(int l,int r,int x,int lx,int ry)
+  {
+     propygate(lx,ry,x);
+     if(lx>=r||ry<=l)return 0;
+     if(lx>=l&&ry<=r)
+     {
+        int ans=0;
+        for(int i=0;i<=20;i++)
+          ans+=sums[i][x]*(1<<i);
+        return ans;
+     }
+     int mid=(lx+ry)/2;
+     return (sum(l,r,2*x+1,lx,mid)+sum(l,r,2*x+2,mid,ry));
+  }
+};
+void solve()
+{
+    int n;
+    cin>>n;
+    vector<int>a(n);
+    for(int &i:a)cin>>i;
+    segtree st;
+    st.init(n+1);
+    st.build(a);
+    int q;
+    cin>>q;
+    while (q--)
+    {
+        int t;
+        cin>>t;
+        if(t==2)
+        {
+            int l,r,v;
+            cin>>l>>r>>v;
+            st.modify(l-1,r,v);
+        }
+        else
+        {
+            int l,r;
+            cin>>l>>r;
+            cout<<st.sum(l-1,r)<<endl;    
+        } 
+    }
+}
+signed main()
+{
+    elsady
+    //test
+       solve();
+}
+```
+
